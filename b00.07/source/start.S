@@ -13,7 +13,7 @@
 	.global _start,timer_init
 
 	// 当需要引用外部的符号是，使用extern声明。相当于C语言中的extern
-	.extern gdt_table, pg_dir, idt_table
+	.extern gdt_table, pg_dir, idt_table, task_0
 
 	// 指定以下的代码生成16位的机器指令，这样才能在启动时的实模式下运行
   	.code16
@@ -90,7 +90,7 @@ task_0_entry:
 	mov %ss, %ax
 	mov %ax, %ds
 	mov %ax, %es
-	jmp  .
+	jmp task_0			// 跳转到任务0运行
 
 // 定时器0中断函数
 timer_init:

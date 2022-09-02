@@ -14,6 +14,8 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 
+#define MAP_ADDR        (0x80000000)            // 要映射的地址
+
 /**
  * @brief 系统调用的API处理函数
  */
@@ -53,6 +55,9 @@ void sys_show(char *str, char color) {
  * @brief 任务0
  */
 void task_0 (void) {
+    // 加上下面这句会跑飞
+    // *(unsigned char *)MAP_ADDR = 0x1;
+
     char * str = "task a: 1234";
     uint8_t color = 0;
     for (;;) {
@@ -78,7 +83,6 @@ void task_1 (void) {
  * @brief 系统页表
  * 下面配置中只做了一个处理，即将0x0-4MB虚拟地址映射到0-4MB的物理地址，做恒等映射。
  */
-#define MAP_ADDR        (0x80000000)            // 要映射的地址
 #define PDE_P			(1 << 0)
 #define PDE_W			(1 << 1)
 #define PDE_U			(1 << 2)
@@ -143,17 +147,17 @@ struct {uint16_t limit_l, base_l, basehl_attr, base_limit;}gdt_table[256] __attr
     // 0x00cf93000000ffff - 从0地址开始，P存在，DPL=0，Type=非系统段，数据段，界限4G，可读写
     [KERNEL_DATA_SEG/ 8] = {0xffff, 0x0000, 0x9200, 0x00cf},
     // 0x00cffa000000ffff - 从0地址开始，P存在，DPL=3，Type=非系统段，32位代码段，界限4G
-    //[APP_CODE_SEG/ 8] = {0xffff, 0x0000, 0xfa00, 0x00cf},
+    [APP_CODE_SEG/ 8] = {0xffff, 0x0000, 0xfa00, 0x00cf},
     // 0x00cff3000000ffff - 从0地址开始，P存在，DPL=3，Type=非系统段，数据段，界限4G，可读写
-    //[APP_DATA_SEG/ 8] = {0xffff, 0x0000, 0xf300, 0x00cf},
+    [APP_DATA_SEG/ 8] = {0xffff, 0x0000, 0xf300, 0x00cf},
     // 两个进程的task0和tas1的tss段:自己设置，直接写会编译报错
-    [TASK0_LDT_SEL / 8] = {sizeof(task0_ldt_table), (uint32_t)0, 0xe200, 0x00cf},
-    [TASK1_LDT_SEL / 8] = {sizeof(task0_ldt_table), (uint32_t)0, 0xe200, 0x00cf},
-
     [TASK0_TSS_SEL/ 8] = {0x0068, 0, 0xe900, 0x0},
     [TASK1_TSS_SEL/ 8] = {0x0068, 0, 0xe900, 0x0},
     // 系统调用的调用门
     [SYSCALL_SEL / 8] = {0x0000, KERNEL_CODE_SEG, 0xec03, 0x0000},
+    // 两个任务的LDT
+    [TASK0_LDT_SEL / 8] = {sizeof(task0_ldt_table), (uint32_t)0, 0xe200, 0x00cf},
+    [TASK1_LDT_SEL / 8] = {sizeof(task0_ldt_table), (uint32_t)0, 0xe200, 0x00cf},
 };
 
 void outb(uint8_t data, uint16_t port) {
@@ -206,5 +210,5 @@ void os_init (void) {
     // 虚拟内存
     // 0x80000000开始的4MB区域的映射
     pg_dir[MAP_ADDR >> 22] = (uint32_t)pg_table | PDE_P | PDE_W | PDE_U;
-    pg_table[(MAP_ADDR >> 12) & 0x3FF] = (uint32_t)map_phy_buffer| PDE_P | PDE_W | PDE_U;
+    pg_table[(MAP_ADDR >> 12) & 0x3FF] = (uint32_t)map_phy_buffer| PDE_P | PDE_W;
 };

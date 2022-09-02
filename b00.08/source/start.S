@@ -10,10 +10,10 @@
 	#include "os.h"
 
 	// 声明本地以下符号是全局的，在其它源文件中可以访问
-	.global _start,timer_init, syscall_handler
+	.global _start,timer_init
 
 	// 当需要引用外部的符号是，使用extern声明。相当于C语言中的extern
-	.extern gdt_table, pg_dir, idt_table, task_sched
+	.extern gdt_table, pg_dir, idt_table, task_0, task_sched
 
 	// 指定以下的代码生成16位的机器指令，这样才能在启动时的实模式下运行
   	.code16

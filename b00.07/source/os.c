@@ -14,11 +14,23 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 
+#define MAP_ADDR        (0x80000000)            // 要映射的地址
+
+/**
+ * @brief 任务0
+ */
+void task_0 (void) {
+    // 加上下面这句会跑飞
+    // *(unsigned char *)MAP_ADDR = 0x1;
+
+    for (;;) {
+    }
+}
+
 /**
  * @brief 系统页表
  * 下面配置中只做了一个处理，即将0x0-4MB虚拟地址映射到0-4MB的物理地址，做恒等映射。
  */
-#define MAP_ADDR        (0x80000000)            // 要映射的地址
 #define PDE_P			(1 << 0)
 #define PDE_W			(1 << 1)
 #define PDE_U			(1 << 2)
@@ -33,6 +45,7 @@ uint32_t pg_dir[1024] __attribute__((aligned(4096))) = {
  * @brief 任务0和1的栈空间
  */
 uint32_t task0_dpl3_stack[1024];
+
 
 struct {uint16_t offset_l, selector, attr, offset_h;} idt_table[256] __attribute__((aligned(8))) = {1};
 struct {uint16_t limit_l, base_l, basehl_attr, base_limit;}gdt_table[256] __attribute__((aligned(8))) = {
@@ -79,5 +92,5 @@ void os_init (void) {
     // 虚拟内存
     // 0x80000000开始的4MB区域的映射
     pg_dir[MAP_ADDR >> 22] = (uint32_t)pg_table | PDE_P | PDE_W | PDE_U;
-    pg_table[(MAP_ADDR >> 12) & 0x3FF] = (uint32_t)map_phy_buffer| PDE_P | PDE_W | PDE_U;
+    pg_table[(MAP_ADDR >> 12) & 0x3FF] = (uint32_t)map_phy_buffer| PDE_P | PDE_W;
 };
